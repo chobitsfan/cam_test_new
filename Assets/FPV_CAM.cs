@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -24,44 +25,56 @@ public class FPV_CAM : MonoBehaviour
     void Start()
     {
         Debug.Log(Screen.width + "x" + Screen.height + ":" + SystemInfo.SupportsTextureFormat(TextureFormat.RGFloat));
-        distortMap = new Texture2D(Screen.width, Screen.height, TextureFormat.RGFloat, false, true);
-        float[] distortData = new float[Screen.width * Screen.height * 2];
-        for (int i=0;i<Screen.height;i++)
-        {
-            for (int j=0;j<Screen.width;j++)
-            {
-                float x = 1.0f * j / Screen.width;
-                float y = 1.0f * i / Screen.height;
-                float r2 = x * x + y * y;
-                float distort = 1 + _K1 * r2 + _K2 * r2 * r2 + _K3 * r2 * r2 * r2;
-                float x_distort = x * distort;
-                float y_distort = y * distort;
-                x_distort = x_distort + (2 * _P1 * x * y + _P2 * (r2 + 2 * x * x));
-                y_distort = y_distort + (_P1 * (r2 + 2 * y * y) + 2 * _P2 * x * y);
-                //Debug.Log(x_distort + "," + y_distort);
-                int idxU = (int)(x_distort * Screen.width);
-                int idxV = (int)(y_distort * Screen.height);
-                int mapIdx = idxV * Screen.width * 2+ idxU * 2;
-                //Debug.Log(mapIdx);
-                if (mapIdx < Screen.width * Screen.height * 2)
-                {
-                    distortData[mapIdx] = x;
-                    distortData[mapIdx + 1] = y;
-                }
-                //distortData[i * Screen.width + j] = 1.0f * j / Screen.width;
-                //distortData[i * Screen.width + j+1] = 1.0f * i / Screen.height;
-
-                //distortData[i * Screen.width * 2 + j * 2] = 1.0f * j / Screen.width;
-                //distortData[i * Screen.width *2  + j *2 + 1] = 1.0f * j / Screen.width;
-            }
-        }
+        int width = Screen.width;
+        int height = Screen.height;
+        distortMap = new Texture2D(width, height, TextureFormat.RGFloat, false, true);
         distortMap.filterMode = FilterMode.Point;
         distortMap.anisoLevel = 1;
         distortMap.wrapMode = TextureWrapMode.Clamp;
+        float[] distortData = new float[width * height * 2];
+        for (int i = 0; i < distortData.Length; i++)
+        {
+            distortData[i] = -1;
+        }
+        for (int i = 0; i < height; i++)
+        {
+            for (int j = 0; j < width; j++)
+            {
+                double x = 1.0 * j / width;
+                double y = 1.0 * i / height;
+                double r2 = x * x + y * y;
+                double distort = 1 + _K1 * r2 + _K2 * r2 * r2 + _K3 * r2 * r2 * r2;
+                double x_distort = x * distort;
+                double y_distort = y * distort;
+                x_distort += (2 * _P1 * x * y + _P2 * (r2 + 2 * x * x));
+                y_distort += (_P1 * (r2 + 2 * y * y) + 2 * _P2 * x * y);
+                //Debug.Log(x_distort + "," + y_distort);
+                int idxU = (int)(x_distort * width);
+                int idxV = (int)(y_distort * height);
+                int mapIdx = idxV * width * 2 + idxU * 2;
+                //Debug.Log(mapIdx);
+                if (mapIdx < width * height * 2)
+                {
+                    distortData[mapIdx] = (float)x;
+                    distortData[mapIdx + 1] = (float)y;
+                }
+            }
+        }
+        /*for (int i = 0; i < distortData.Length; i++)
+        {
+            if (distortData[i] < 0)
+            {
+                distortData[i] = distortData[i - 1];
+            }
+        }*/
         distortMap.SetPixelData(distortData, 0);
         distortMap.Apply(false);
         mat.SetTexture("_DistortTex", distortMap);
+
         //renderTexture = new RenderTexture(Screen.width, Screen.height, 24, RenderTextureFormat.ARGB32);
+        //cam.targetTexture = renderTexture;
+        //cam.forceIntoRenderTexture = true;
+
         //cam.SetReplacementShader(shader, "");
         WebCamDevice[] webCams = WebCamTexture.devices;
         foreach (WebCamDevice webCam in webCams)
@@ -83,12 +96,17 @@ public class FPV_CAM : MonoBehaviour
         
     }*/
 
-    //void OnPreRender()
-    //{
+    void OnPreRender()
+    {
         //cam.targetTexture = renderTexture;
         //cam.forceIntoRenderTexture = true;
         //Graphics.Blit(webcamTexture, null as RenderTexture);
-    //}
+    }
+
+    private void OnDestroy()
+    {
+        //renderTexture.Release();
+    }
 
     void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
@@ -99,6 +117,7 @@ public class FPV_CAM : MonoBehaviour
         //Graphics.Blit(source, destination);
         //Graphics.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), source, mat, -1);
         //cam.targetTexture = null;
+        //Graphics.Blit(destination, null as RenderTexture);
     }
 
     //void OnPostRender()

@@ -47,6 +47,7 @@
             {
                 float4 data = tex2D(_DistortTex, i.uv);
                 fixed4 col = tex2D(_MainTex, float2(data.x,data.y));
+                //return col * col.a + tex2D(_CamTex, i.uv) * (1 - col.a);
                 return col;
             }
             ENDCG
