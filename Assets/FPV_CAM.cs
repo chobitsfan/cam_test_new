@@ -36,12 +36,13 @@ public class FPV_CAM : MonoBehaviour
         {
             distortData[i] = -1;
         }
-        for (int i = 0; i < height; i++)
+        int sample_mutply = 2;
+        for (int i = 0; i < height * sample_mutply; i++)
         {
-            for (int j = 0; j < width; j++)
+            for (int j = 0; j < width * sample_mutply; j++)
             {
-                double x = 1.0 * j / width;
-                double y = 1.0 * i / height;
+                double x = 1.0 * j / (width * sample_mutply);
+                double y = 1.0 * i / (height * sample_mutply);
                 double r2 = x * x + y * y;
                 double distort = 1 + _K1 * r2 + _K2 * r2 * r2 + _K3 * r2 * r2 * r2;
                 double x_distort = x * distort;
@@ -49,8 +50,8 @@ public class FPV_CAM : MonoBehaviour
                 x_distort += (2 * _P1 * x * y + _P2 * (r2 + 2 * x * x));
                 y_distort += (_P1 * (r2 + 2 * y * y) + 2 * _P2 * x * y);
                 //Debug.Log(x_distort + "," + y_distort);
-                int idxU = (int)(x_distort * width);
-                int idxV = (int)(y_distort * height);
+                int idxU = (int)Math.Round(x_distort * width);
+                int idxV = (int)Math.Round(y_distort * height);
                 int mapIdx = idxV * width * 2 + idxU * 2;
                 //Debug.Log(mapIdx);
                 if (mapIdx < width * height * 2)
