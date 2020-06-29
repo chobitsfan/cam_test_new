@@ -11,10 +11,10 @@ public class FPV_CAM : MonoBehaviour
     public Material mat;
     //public Shader shader;
     Texture2D distortMap;
-    double _CX = 315.46;
-    double _CY = 240.96;
-    double _FX = 246.88;
-    double _FY = 249.75;
+    double _CX = 315.467;
+    double _CY = 240.9649;
+    double _FX = 246.8864;
+    double _FY = 249.7506;
     double _K1 = 0.21874;
     double _K2 = -0.24239;
     double _P1 = -0.00089613;
@@ -38,13 +38,10 @@ public class FPV_CAM : MonoBehaviour
         {
             distortData[i] = -1;
         }
-        //int sample_mutply = 1;
-        for (int i = 0; i < camHeight; i++)
+        for (double i = 0; i < camHeight; i+=0.5)
         {
-            for (int j = 0; j < camWidth; j++)
+            for (double j = 0; j < camWidth; j+=0.5)
             {
-                //double x = (double)j / (width * sample_mutply);
-                //double y = (double)i / (height * sample_mutply);
                 double x = (j - _CX) / _FX;
                 double y = (i - _CY) / _FY;
                 double r2 = x * x + y * y;
