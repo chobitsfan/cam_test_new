@@ -11,19 +11,21 @@ public class FPV_CAM : MonoBehaviour
     public Material mat;
     //public Shader shader;
     Texture2D distortMap;
-    //float _CX = 315.46f;
-    //float _CY = 240.96f;
-    //float _FX = 246.88f;
-    //float _FY = 249.75f;
-    float _K1 = 0.21874f;
-    float _K2 = -0.24239f;
-    float _P1 = -0.00089613f;
-    float _P2 = 0.00064407f;
-    float _K3 = 0.063342f;
+    double _CX = 315.46;
+    double _CY = 240.96;
+    double _FX = 246.88;
+    double _FY = 249.75;
+    double _K1 = 0.21874;
+    double _K2 = -0.24239;
+    double _P1 = -0.00089613;
+    double _P2 = 0.00064407;
+    double _K3 = 0.063342;
 
     // Start is called before the first frame update
     void Start()
     {
+        int camWidth = 640;
+        int camHeight = 480;
         Debug.Log(Screen.width + "x" + Screen.height + ":" + SystemInfo.SupportsTextureFormat(TextureFormat.RGFloat));
         int width = Screen.width;
         int height = Screen.height;
@@ -36,28 +38,32 @@ public class FPV_CAM : MonoBehaviour
         {
             distortData[i] = -1;
         }
-        int sample_mutply = 2;
-        for (int i = 0; i < height * sample_mutply; i++)
+        //int sample_mutply = 1;
+        for (int i = 0; i < camHeight; i++)
         {
-            for (int j = 0; j < width * sample_mutply; j++)
+            for (int j = 0; j < camWidth; j++)
             {
-                double x = 1.0 * j / (width * sample_mutply);
-                double y = 1.0 * i / (height * sample_mutply);
+                //double x = (double)j / (width * sample_mutply);
+                //double y = (double)i / (height * sample_mutply);
+                double x = (j - _CX) / _FX;
+                double y = (i - _CY) / _FY;
                 double r2 = x * x + y * y;
                 double distort = 1 + _K1 * r2 + _K2 * r2 * r2 + _K3 * r2 * r2 * r2;
                 double x_distort = x * distort;
                 double y_distort = y * distort;
                 x_distort += (2 * _P1 * x * y + _P2 * (r2 + 2 * x * x));
                 y_distort += (_P1 * (r2 + 2 * y * y) + 2 * _P2 * x * y);
+                x_distort = x_distort * _FX + _CX;
+                y_distort = y_distort * _FY + _CY;
                 //Debug.Log(x_distort + "," + y_distort);
-                int idxU = (int)Math.Round(x_distort * width);
-                int idxV = (int)Math.Round(y_distort * height);
-                int mapIdx = idxV * width * 2 + idxU * 2;
-                //Debug.Log(mapIdx);
-                if (mapIdx < width * height * 2)
+                int idxU = (int)Math.Round(x_distort / camWidth * width);
+                int idxV = (int)Math.Round(y_distort / camHeight * height);
+                if (idxU >=0 && idxV>=0 && idxU < width && idxV < height)
                 {
-                    distortData[mapIdx] = (float)x;
-                    distortData[mapIdx + 1] = (float)y;
+                    int mapIdx = idxV * width * 2 + idxU * 2;
+                    //Debug.Log(mapIdx);
+                    distortData[mapIdx] = (float)j / camWidth;
+                    distortData[mapIdx + 1] = (float)i / camHeight;
                 }
             }
         }
