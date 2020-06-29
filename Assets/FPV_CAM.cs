@@ -1,10 +1,24 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class FPV_CAM : MonoBehaviour
 {
+    [DllImport("vplayerUnity.dll")]
+    public static extern IntPtr NPlayer_Init();
+    [DllImport("vplayerUnity.dll")]
+    public static extern int NPlayer_Connect(IntPtr pPlayer, string url, int mode);
+    [DllImport("vplayerUnity.dll")]
+    public static extern int NPlayer_GetWidth(IntPtr pPlayer);
+    [DllImport("vplayerUnity.dll")]
+    public static extern int NPlayer_GetHeight(IntPtr pPlayer);
+    [DllImport("vplayerUnity.dll")]
+    public static extern int NPlayer_Uninit(IntPtr pPlayer);
+    [DllImport("vplayerUnity.dll")]
+    public static extern int NPlayer_ReadFrame(IntPtr pPlayer, IntPtr buffer, out UInt64 timestamp);
+
     WebCamTexture webcamTexture;
     //RenderTexture renderTexture;
     public Camera cam;
@@ -21,9 +35,24 @@ public class FPV_CAM : MonoBehaviour
     double _P2 = 0.00064407;
     double _K3 = 0.063342;
 
+    protected IntPtr ptr;
+    protected int w, h;
+    protected int frameLen;
+    public byte[] buffer;
+    protected IntPtr unmanagedBuffer;
+    protected bool bStart;
+    Texture2D texY;
+    Texture2D texU;
+    Texture2D texV;
+
     // Start is called before the first frame update
     void Start()
     {
+        ptr = IntPtr.Zero;
+        ptr = NPlayer_Init();
+        NPlayer_Connect(ptr, "rtsp://192.168.50.92/v1/", 1);
+        bStart = false;
+
         int camWidth = 640;
         int camHeight = 480;
         Debug.Log(Screen.width + "x" + Screen.height + ":" + SystemInfo.SupportsTextureFormat(TextureFormat.RGFloat));
@@ -100,16 +129,80 @@ public class FPV_CAM : MonoBehaviour
         
     }*/
 
-    void OnPreRender()
+    //void OnPreRender()
+    //{
+    //cam.targetTexture = renderTexture;
+    //cam.forceIntoRenderTexture = true;
+    //Graphics.Blit(webcamTexture, null as RenderTexture);
+    //}
+
+    void initVideoFrameBuffer()
     {
-        //cam.targetTexture = renderTexture;
-        //cam.forceIntoRenderTexture = true;
-        //Graphics.Blit(webcamTexture, null as RenderTexture);
+        w = NPlayer_GetWidth(ptr);
+        h = NPlayer_GetHeight(ptr);        
+        if (w != 0 && h != 0)
+        {
+            Debug.Log("width = " + w + ", height = " + h);
+            frameLen = w * h * 3;
+            Debug.Log("frameLen = " + frameLen);
+            buffer = new byte[frameLen];
+            unmanagedBuffer = Marshal.AllocHGlobal(frameLen);
+
+            bStart = true;
+
+            texY = new Texture2D(w, h, TextureFormat.Alpha8, false);
+            //U分量和V分量分別存放在兩張貼圖中
+            texU = new Texture2D(w >> 1, h >> 1, TextureFormat.Alpha8, false);
+            texV = new Texture2D(w >> 1, h >> 1, TextureFormat.Alpha8, false);
+            mat.SetTexture("_YTex", texY);
+            mat.SetTexture("_UTex", texU);
+            mat.SetTexture("_VTex", texV);
+        }
+    }
+
+    void releaseVideoFrameBuffer()
+    {
+        if (unmanagedBuffer == IntPtr.Zero)
+            Marshal.FreeHGlobal(unmanagedBuffer);
+    }
+
+    void getVideoFameBuffer()
+    {
+        UInt64 timestamp;
+        frameLen = NPlayer_ReadFrame(ptr, unmanagedBuffer, out timestamp);
+        Marshal.Copy(unmanagedBuffer, buffer, 0, frameLen);
+
+        int Ycount = w * h;
+        int UVcount = w * (h >> 2);
+        texY.SetPixelData(buffer, 0, 0);
+        texY.Apply();
+        texU.SetPixelData(buffer, 0, Ycount);
+        texU.Apply();
+        texV.SetPixelData(buffer, 0, Ycount + UVcount);
+        texV.Apply();
+    }
+
+    void Update()
+    {
+        if (!bStart)
+        {
+            //Debug.Log("initVideoFrameBuffer");
+            initVideoFrameBuffer();
+        }
+        else
+        {
+            //Debug.Log("getVideoFameBuffer");
+            getVideoFameBuffer();
+        }
     }
 
     private void OnDestroy()
     {
         //renderTexture.Release();
+        Debug.Log("VplayerUnityframeReader OnDestroy");
+        NPlayer_Uninit(ptr);
+        ptr = IntPtr.Zero;
+        releaseVideoFrameBuffer();
     }
 
     void OnRenderImage(RenderTexture source, RenderTexture destination)
