@@ -25,15 +25,15 @@ public class FPV_CAM : MonoBehaviour
     public Material mat;
     //public Shader shader;
     Texture2D distortMap;
-    double _CX = 315.467;
-    double _CY = 240.9649;
-    double _FX = 246.8864;
-    double _FY = 249.7506;
-    double _K1 = 0.21874;
-    double _K2 = -0.24239;
-    double _P1 = -0.00089613;
-    double _P2 = 0.00064407;
-    double _K3 = 0.063342;
+    double _CX = 6.395 * 100;
+    double _CY = 3.595 * 100;
+    double _FX = 1.2936588953959019 * 1000;
+    double _FY = 1.2936588953959019 * 1000;
+    double _K1 = 3.9125784966932795 * 0.01;
+    double _K2 = 7.6818881727080013 * 0.1;
+    double _P1 = 0;
+    double _P2 = 0;
+    double _K3 = -3.238587127227778;
 
     protected IntPtr ptr;
     protected int w, h;
@@ -52,9 +52,10 @@ public class FPV_CAM : MonoBehaviour
         ptr = NPlayer_Init();
         NPlayer_Connect(ptr, "rtsp://192.168.50.92/v1/", 1);
         bStart = false;
-
-        int camWidth = 640;
-        int camHeight = 480;
+        
+        int camWidth = 1280;
+        int camHeight = 720;
+        cam.fieldOfView = (float)(Math.Atan(camHeight / 2.0 / _FY) * 2 / Math.PI * 180);
         Debug.Log(Screen.width + "x" + Screen.height + ":" + SystemInfo.SupportsTextureFormat(TextureFormat.RGFloat));
         int width = Screen.width;
         int height = Screen.height;
