@@ -2,8 +2,7 @@
 {
     Properties
     {
-        _MainTex ("Main", 2D) = "white" {}
-        _CamTex("Cam", 2D) = "white" {}
+        _MainTex ("Main", 2D) = "white" {}        
         _DistortTex("Distort", 2D) = "white" {}
         _YTex("Y", 2D) = "white" {}
         _UTex("U", 2D) = "white" {}
@@ -43,7 +42,6 @@
             }
 
             sampler2D _MainTex;
-            sampler2D _CamTex;
             sampler2D _DistortTex;
             sampler2D _YTex;
             sampler2D _UTex;
@@ -63,8 +61,6 @@
                 float4 data = tex2D(_DistortTex, i.uv);
                 fixed4 col = tex2D(_MainTex, float2(data.x,data.y));
                 return col * col.a + fixed4(r, g, b, 1) * (1 - col.a);
-                //return col * col.a + tex2D(_CamTex, i.uv) * (1 - col.a);
-                //return col;
             }
             ENDCG
         }

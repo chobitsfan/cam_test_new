@@ -19,11 +19,9 @@ public class FPV_CAM : MonoBehaviour
     [DllImport("vplayerUnity.dll")]
     public static extern int NPlayer_ReadFrame(IntPtr pPlayer, IntPtr buffer, out UInt64 timestamp);
 
-    WebCamTexture webcamTexture;
-    //RenderTexture renderTexture;
     public Camera cam;
     public Material mat;
-    //public Shader shader;
+
     Texture2D distortMap;
     double _CX = 6.395 * 100;
     double _CY = 3.595 * 100;
@@ -50,12 +48,12 @@ public class FPV_CAM : MonoBehaviour
     {
         ptr = IntPtr.Zero;
         ptr = NPlayer_Init();
-        NPlayer_Connect(ptr, "rtsp://192.168.50.92/v1/", 1);
+        NPlayer_Connect(ptr, "rtsp://192.168.50.21/v1/", 1);
         bStart = false;
         
         int camWidth = 1280;
         int camHeight = 720;
-        cam.fieldOfView = (float)(Math.Atan(camHeight / 2.0 / _FY) * 2 / Math.PI * 180);
+        //cam.fieldOfView = (float)(Math.Atan(camHeight / 2.0 / _FY) * 2 / Math.PI * 180);
         Debug.Log(Screen.width + "x" + Screen.height + ":" + SystemInfo.SupportsTextureFormat(TextureFormat.RGFloat));
         int width = Screen.width;
         int height = Screen.height;
@@ -104,38 +102,7 @@ public class FPV_CAM : MonoBehaviour
         distortMap.SetPixelData(distortData, 0);
         distortMap.Apply(false);
         mat.SetTexture("_DistortTex", distortMap);
-
-        //renderTexture = new RenderTexture(Screen.width, Screen.height, 24, RenderTextureFormat.ARGB32);
-        //cam.targetTexture = renderTexture;
-        //cam.forceIntoRenderTexture = true;
-
-        //cam.SetReplacementShader(shader, "");
-        WebCamDevice[] webCams = WebCamTexture.devices;
-        foreach (WebCamDevice webCam in webCams)
-        {
-            if (webCam.name.StartsWith("USB2.0"))
-            {
-                Debug.Log("background camera:" + webCam.name);
-                webcamTexture = new WebCamTexture(webCam.name);
-                webcamTexture.Play();
-                mat.SetTexture("_CamTex", webcamTexture);
-                break;
-            }
-        }
     }
-
-    // Update is called once per frame
-    /*void Update()
-    {
-        
-    }*/
-
-    //void OnPreRender()
-    //{
-    //cam.targetTexture = renderTexture;
-    //cam.forceIntoRenderTexture = true;
-    //Graphics.Blit(webcamTexture, null as RenderTexture);
-    //}
 
     void initVideoFrameBuffer()
     {
@@ -208,22 +175,6 @@ public class FPV_CAM : MonoBehaviour
 
     void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
-        //Debug.Log(source.format+""+destination.format);
-        //Debug.Log("OnRenderImage");
-        //Graphics.Blit(webcamTexture, null as RenderTexture);
         Graphics.Blit(source, destination, mat);
-        //Graphics.Blit(source, destination);
-        //Graphics.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), source, mat, -1);
-        //cam.targetTexture = null;
-        //Graphics.Blit(destination, null as RenderTexture);
     }
-
-    //void OnPostRender()
-    //{
-        //Debug.Log("OnPostRender");
-        //Graphics.Blit(webcamTexture, renderTexture);
-        //Graphics.DrawTexture(new Rect(10, 10, 100, 100), webcamTexture);
-        //cam.targetTexture = null;
-        //Debug.Log("haha");
-    //}
 }
